@@ -2,6 +2,8 @@
 
 iTunes/Apple Music preview connector for [DancingMusic](https://github.com/DancingMusic/DancingMusic).
 
+🔗 **Live demo:** [https://dancingmusic.github.io/MusicConnect-iTunes/](https://dancingmusic.github.io/MusicConnect-iTunes/) — search + play table built from this connector's own `dist/index.js`.
+
 Uses Apple's public iTunes Search API — global music catalog (millions of songs), returns 30-second previews via the official `previewUrl` field. No API key, no auth, CORS-friendly.
 
 ## Use in DancingMusic
