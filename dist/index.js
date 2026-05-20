@@ -26,8 +26,8 @@ var ITunesConnector = class {
       id: "itunes",
       name: "iTunes / Apple Music",
       description: "Apple iTunes Search \u2014 30-second previews of millions of songs",
-      version: "0.1.0",
-      capabilities: ["search", "stream"]
+      version: "0.2.0",
+      capabilities: ["search", "stream", "playlist"]
     };
   }
   async init() {
@@ -72,12 +72,72 @@ var ITunesConnector = class {
     if (!url) return null;
     return { url, format: "m4a" };
   }
+  // ----- Playlists -----
+  //
+  // iTunes Search has no real "playlist" concept. We surface the Apple
+  // Marketing Tools RSS charts (https://rss.applemarketingtools.com) as
+  // virtual playlists — each chart is a list of recent hits. The default
+  // catalog returns one playlist per popular feed; `category` can be one
+  // of: most-played, new-releases, top-songs, top-albums.
+  //
+  // Playlist id format: `itunes-playlist:<country>/<feed>/<limit>`
+  // e.g. `itunes-playlist:us/most-played/50`
+  async listPlaylists(query = {}) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 30;
+    const country = "us";
+    const feeds = query.category ? [query.category] : ["most-played", "new-releases-songs", "top-songs"];
+    const playlists = feeds.map((feed) => ({
+      id: `itunes-playlist:${country}/${feed}/50`,
+      name: feedLabel(feed),
+      description: `Apple Music ${country.toUpperCase()} \xB7 ${feed}`,
+      trackCount: 50,
+      curator: "Apple Marketing",
+      externalUrl: `https://rss.applemarketingtools.com/api/v2/${country}/music/${feed}/50/songs.json`
+    }));
+    return { playlists, total: playlists.length, page, pageSize };
+  }
+  async getPlaylistTracks(playlistId, opts = {}) {
+    const page = opts.page ?? 1;
+    const pageSize = opts.pageSize ?? 30;
+    const raw = playlistId.startsWith("itunes-playlist:") ? playlistId.slice("itunes-playlist:".length) : playlistId;
+    const [country = "us", feed = "most-played", limitStr = "50"] = raw.split("/");
+    const limit = parseInt(limitStr, 10) || 50;
+    const url = `https://rss.applemarketingtools.com/api/v2/${country}/music/${feed}/${limit}/songs.json`;
+    const res = await fetch(url);
+    if (!res.ok) return { tracks: [], total: 0, page, pageSize };
+    const data = await res.json();
+    const items = data.feed?.results ?? [];
+    const tracks = items.map((it) => ({
+      id: `itunes:${it.id}`,
+      title: it.name,
+      artist: it.artistName,
+      album: it.collectionName,
+      coverUrl: it.artworkUrl100?.replace(/\/100x100bb\.(?:jpg|png)$/i, "/600x600bb.jpg"),
+      durationSec: 0,
+      price: 0,
+      currency: "USD",
+      version: "1.0.0",
+      createdAt: it.releaseDate ?? "",
+      updatedAt: ""
+    }));
+    return { tracks, total: tracks.length, page, pageSize };
+  }
   parseId(trackId) {
     if (trackId.startsWith("itunes:")) return trackId.slice(7);
     if (/^\d+$/.test(trackId)) return trackId;
     return null;
   }
 };
+function feedLabel(feed) {
+  const map = {
+    "most-played": "Most Played",
+    "top-songs": "Top Songs",
+    "new-releases-songs": "New Releases",
+    "top-albums": "Top Albums"
+  };
+  return map[feed] || feed;
+}
 var index_default = ITunesConnector;
 export {
   ITunesConnector,

@@ -50,6 +50,37 @@ describe("ITunesConnector (contract)", () => {
     expect(t.durationSec).toBe(215);
   });
 
+  it("listPlaylists returns Apple Marketing chart entries", async () => {
+    const c = new ITunesConnector();
+    await c.init();
+    const r = await c.listPlaylists!();
+    // Three default feeds, no fetch needed (static)
+    expect(r.playlists.length).toBe(3);
+    const ids = r.playlists.map(p => p.id);
+    expect(ids[0]).toMatch(/^itunes-playlist:/);
+    expect(r.playlists[0].curator).toBe("Apple Marketing");
+  });
+
+  it("getPlaylistTracks reads from Apple RSS chart", async () => {
+    mockFetch((url) => {
+      expect(url).toContain("rss.applemarketingtools.com");
+      return {
+        feed: {
+          results: [
+            { id: "111", name: "Hit", artistName: "X", collectionName: "Y", artworkUrl100: "https://x/100x100bb.jpg", releaseDate: "2025-01-01" },
+            { id: "222", name: "Hit2", artistName: "Z" },
+          ],
+        },
+      };
+    });
+    const c = new ITunesConnector();
+    await c.init();
+    const r = await c.getPlaylistTracks!("itunes-playlist:us/most-played/50");
+    expect(r.tracks).toHaveLength(2);
+    expect(r.tracks[0].id).toBe("itunes:111");
+    expect(r.tracks[0].coverUrl).toContain("600x600");
+  });
+
   it("getStreamUrl returns a 30s preview", async () => {
     mockFetch((url) => {
       expect(url).toContain("itunes.apple.com/lookup");
