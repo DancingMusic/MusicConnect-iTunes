@@ -61,6 +61,16 @@ describe("ITunesConnector (contract)", () => {
     expect(r.playlists[0].curator).toBe("Apple Marketing");
   });
 
+  it("listPlaylists sort selects feed (new=new-releases, hot=most-played)", async () => {
+    const c = new ITunesConnector();
+    await c.init();
+    const newR = await c.listPlaylists!({ sort: "new" });
+    expect(newR.playlists.length).toBe(1);
+    expect(newR.playlists[0].id).toContain("new-releases-songs");
+    const hotR = await c.listPlaylists!({ sort: "hot" });
+    expect(hotR.playlists[0].id).toContain("most-played");
+  });
+
   it("getPlaylistTracks reads from Apple RSS chart", async () => {
     mockFetch((url) => {
       expect(url).toContain("rss.applemarketingtools.com");

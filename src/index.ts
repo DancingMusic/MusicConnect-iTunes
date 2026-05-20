@@ -134,9 +134,14 @@ export class ITunesConnector implements MusicConnector {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 30;
     const country = "us";
-    const feeds = query.category
-      ? [query.category]
-      : ["most-played", "new-releases-songs", "top-songs"];
+    // For iTunes, sort/category overlap conceptually — each RSS feed IS a
+    // sort. We default to a 3-feed sampler; `sort: 'new'` picks the
+    // new-releases feed only, `sort: 'hot' | 'trending'` picks most-played.
+    let feeds: string[];
+    if (query.category) feeds = [query.category];
+    else if (query.sort === "new") feeds = ["new-releases-songs"];
+    else if (query.sort === "hot" || query.sort === "trending") feeds = ["most-played"];
+    else feeds = ["most-played", "new-releases-songs", "top-songs"];
     const playlists: MusicPlaylist[] = feeds.map(feed => ({
       id: `itunes-playlist:${country}/${feed}/50`,
       name: feedLabel(feed),

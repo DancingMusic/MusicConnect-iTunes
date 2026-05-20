@@ -86,7 +86,11 @@ var ITunesConnector = class {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 30;
     const country = "us";
-    const feeds = query.category ? [query.category] : ["most-played", "new-releases-songs", "top-songs"];
+    let feeds;
+    if (query.category) feeds = [query.category];
+    else if (query.sort === "new") feeds = ["new-releases-songs"];
+    else if (query.sort === "hot" || query.sort === "trending") feeds = ["most-played"];
+    else feeds = ["most-played", "new-releases-songs", "top-songs"];
     const playlists = feeds.map((feed) => ({
       id: `itunes-playlist:${country}/${feed}/50`,
       name: feedLabel(feed),
