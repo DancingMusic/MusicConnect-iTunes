@@ -1,0 +1,26 @@
+{
+  "name": "@dancingmusic/music-connect-itunes",
+  "version": "0.1.0",
+  "description": "iTunes/Apple Music preview connector for DancingMusic. Uses Apple's public iTunes Search API (30-second previews, no auth required).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": { "import": "./dist/index.js" }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean --target es2020 --no-splitting",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["dancingmusic", "music-connector", "itunes", "apple-music"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@dancingmusic/music-store": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@dancingmusic/music-store": "file:/Users/wuguangliang/workspace/DancingMusicWorkspace/DancingMusic/.claude/worktrees/elastic-bhabha-ada1fe/submodules/MusicStore",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
