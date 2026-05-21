@@ -11,6 +11,7 @@ import type {
   MusicConnector,
   MusicConnectorMeta,
   MusicListQuery,
+  MusicLyrics,
   MusicSearchResult,
   MusicStreamInfo,
   MusicTrack,
@@ -66,8 +67,8 @@ export class ITunesConnector implements MusicConnector {
     id: "itunes",
     name: "iTunes / Apple Music",
     description: "Apple iTunes Search — 30-second previews of millions of songs",
-    version: "0.2.0",
-    capabilities: ["search", "stream", "playlist"],
+    version: "0.4.0",
+    capabilities: ["search", "stream", "lyrics", "playlist"],
   };
 
   async init(): Promise<void> {
@@ -117,6 +118,42 @@ export class ITunesConnector implements MusicConnector {
     const url = data.results?.[0]?.previewUrl;
     if (!url) return null;
     return { url, format: "m4a" };
+  }
+
+  /**
+   * Lyrics via LRCLIB (https://lrclib.net). LRCLIB is a free, public, no-auth
+   * crowd-sourced lyrics database with synced LRC for most popular songs.
+   *
+   * We look up the iTunes track first to recover its title/artist/duration,
+   * then ask LRCLIB by title+artist (+ duration hint for disambiguation).
+   * Returns the synced LRC as `text` when available; falls back to plain
+   * lyrics; returns null when neither exists.
+   */
+  async getLyrics(trackId: string): Promise<MusicLyrics | null> {
+    const track = await this.getTrack(trackId);
+    if (!track?.title || !track.artist) return null;
+    const params = new URLSearchParams({
+      track_name: track.title,
+      artist_name: track.artist,
+    });
+    if (track.album) params.set("album_name", track.album);
+    if (track.durationSec) params.set("duration", String(track.durationSec));
+    try {
+      const res = await fetch(`https://lrclib.net/api/get?${params}`);
+      if (!res.ok) {
+        // 404 means LRCLIB has nothing for this song — that's fine, just null.
+        return null;
+      }
+      const data = (await res.json()) as {
+        syncedLyrics?: string | null;
+        plainLyrics?: string | null;
+      };
+      if (data.syncedLyrics) return { text: data.syncedLyrics };
+      if (data.plainLyrics) return { text: data.plainLyrics };
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   // ----- Playlists -----
