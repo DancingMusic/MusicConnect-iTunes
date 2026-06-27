@@ -16,13 +16,16 @@ describe("ITunesConnector (contract)", () => {
   it("declares meta", () => {
     const c = new ITunesConnector();
     expect(c.meta.id).toBe("itunes");
-    expect(c.meta.capabilities).toEqual(expect.arrayContaining(["search", "stream"]));
+    expect(c.meta.capabilities).toEqual(expect.arrayContaining(["search", "stream", "login"]));
+    expect(c.meta.configSchema?.find(field => field.key === "appleDeveloperToken")).toBeDefined();
+    expect(c.meta.configSchema?.find(field => field.key === "appleMusicUserToken")).toBeDefined();
   });
 
   it("search returns track-shaped results", async () => {
     mockFetch((url) => {
       expect(url).toContain("itunes.apple.com/search");
       expect(url).toContain("term=mozart");
+      expect(url).toContain("country=us");
       return {
         resultCount: 1,
         results: [{
@@ -71,6 +74,14 @@ describe("ITunesConnector (contract)", () => {
     expect(hotR.playlists[0].id).toContain("most-played");
   });
 
+  it("uses configured storefront for Apple RSS playlists", async () => {
+    const c = new ITunesConnector();
+    await c.init({ storefront: "jp" });
+    const r = await c.listPlaylists!({ sort: "hot" });
+    expect(r.playlists[0].id).toContain("itunes-playlist:jp/");
+    expect(r.playlists[0].externalUrl).toContain("/jp/music/");
+  });
+
   it("getPlaylistTracks reads from Apple RSS chart", async () => {
     mockFetch((url) => {
       expect(url).toContain("rss.applemarketingtools.com");
@@ -109,5 +120,19 @@ describe("ITunesConnector (contract)", () => {
     expect(info).not.toBeNull();
     expect(info!.url).toContain("audio-ssl.itunes.apple.com");
     expect(info!.format).toBe("m4a");
+  });
+
+  it("reports MusicKit token login state and clears user token on logout", async () => {
+    const c = new ITunesConnector();
+    await c.init({ appleDeveloperToken: "dev", appleMusicUserToken: "user" });
+    expect((await c.login({ intent: "status" })).status).toBe("authenticated");
+
+    const start = await c.login({ intent: "start" });
+    expect(start.flow).toBe("manual-token");
+    expect(start.actions?.[0]?.url).toContain("developer.apple.com");
+
+    const out = await c.login({ intent: "logout" });
+    expect(out.status).toBe("anonymous");
+    expect(out.configPatch).toEqual({ appleMusicUserToken: "" });
   });
 });

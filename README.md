@@ -4,7 +4,7 @@ iTunes/Apple Music preview connector for [DancingMusic](https://github.com/Danci
 
 🔗 **Live demo:** [https://dancingmusic.github.io/MusicConnect-iTunes/](https://dancingmusic.github.io/MusicConnect-iTunes/) — search + play table built from this connector's own `dist/index.js`.
 
-Uses Apple's public iTunes Search API — global music catalog (millions of songs), returns 30-second previews via the official `previewUrl` field. No API key, no auth, CORS-friendly.
+Uses Apple's public iTunes Search API — global music catalog (millions of songs), returns 30-second previews via the official `previewUrl` field. No API key is required for previews.
 
 ## Use in DancingMusic
 
@@ -13,6 +13,14 @@ Open the music store → top-right connector switcher → **添加连接器** �
 ```
 https://github.com/DancingMusic/MusicConnect-iTunes
 ```
+
+Optional Apple Music account config:
+
+- `storefront` — Apple storefront/country code, default `us`.
+- `appleDeveloperToken` — MusicKit developer token.
+- `appleMusicUserToken` — MusicKit user token from an Apple-authorized web origin.
+
+The connector reports MusicKit token login state, but full-length Apple Music playback is not exposed by this iTunes preview connector.
 
 ## Track ID format
 
@@ -37,7 +45,7 @@ This repo uses an auto-release workflow ([`.github/workflows/release.yml`](.gith
 
 **Pin to a specific version** (recommended for production):
 ```
-https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.1.0/dist/index.js
+https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.js
 ```
 
 **Always-latest** (handy for dev, but jsdelivr caches `@main` for up to a week):

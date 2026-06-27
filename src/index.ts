@@ -2,7 +2,7 @@
  * iTunes Search music connector for DancingMusic.
  *
  * Uses Apple's public iTunes Search API — global music catalog, returns
- * 30-second previews for every song, no auth required, CORS-friendly.
+ * 30-second previews for every song, CORS-friendly.
  * https://performance-partners.apple.com/search-api
  *
  * Track ID format: `itunes:<trackId>`
@@ -18,6 +18,8 @@ import type {
   MusicPlaylist,
   MusicPlaylistList,
   MusicPlaylistQuery,
+  MusicConnectorLoginRequest,
+  MusicConnectorLoginResult,
 } from "@dancingmusic/music-store";
 
 interface ITunesResult {
@@ -35,6 +37,12 @@ interface ITunesResult {
 interface ITunesResponse {
   resultCount: number;
   results: ITunesResult[];
+}
+
+export interface ITunesConnectorConfig {
+  appleDeveloperToken?: string;
+  appleMusicUserToken?: string;
+  storefront?: string;
 }
 
 const SEARCH_URL = "https://itunes.apple.com/search";
@@ -66,13 +74,81 @@ export class ITunesConnector implements MusicConnector {
   readonly meta: MusicConnectorMeta = {
     id: "itunes",
     name: "iTunes / Apple Music",
-    description: "Apple iTunes Search — 30-second previews of millions of songs",
-    version: "0.4.0",
-    capabilities: ["search", "stream", "lyrics", "playlist"],
+    description: "Apple iTunes Search previews with optional MusicKit account tokens",
+    version: "0.5.0",
+    capabilities: ["search", "stream", "lyrics", "playlist", "login"],
+    configSchema: [
+      {
+        key: "storefront",
+        label: "Apple Music Storefront",
+        type: "text",
+        required: false,
+        default: "us",
+        placeholder: "us",
+        help: "Apple Music storefront/country code, e.g. us, cn, jp.",
+      },
+      {
+        key: "appleDeveloperToken",
+        label: "MusicKit Developer Token",
+        type: "password",
+        required: false,
+        placeholder: "eyJhbGciOi...",
+        help: "Apple Developer 后台签发的 MusicKit developer token。",
+      },
+      {
+        key: "appleMusicUserToken",
+        label: "Apple Music User Token",
+        type: "password",
+        required: false,
+        placeholder: "user-token",
+        help: "通过 MusicKit JS 在授权域名下获得的用户 token。",
+      },
+    ],
   };
 
-  async init(): Promise<void> {
-    /* no-op */
+  private appleDeveloperToken = "";
+  private appleMusicUserToken = "";
+  private storefront = "us";
+
+  async init(config?: Record<string, unknown>): Promise<void> {
+    const typed = config as ITunesConnectorConfig | undefined;
+    this.appleDeveloperToken = typeof typed?.appleDeveloperToken === "string" ? typed.appleDeveloperToken : "";
+    this.appleMusicUserToken = typeof typed?.appleMusicUserToken === "string" ? typed.appleMusicUserToken : "";
+    this.storefront = (typeof typed?.storefront === "string" && typed.storefront.trim())
+      ? typed.storefront.trim().toLowerCase()
+      : "us";
+  }
+
+  async login(request: MusicConnectorLoginRequest = { intent: "status" }): Promise<MusicConnectorLoginResult> {
+    const intent = request.intent ?? "status";
+    if (intent === "status") {
+      if (this.appleDeveloperToken && this.appleMusicUserToken) {
+        return { status: "authenticated", user: { name: "Apple Music" }, message: "MusicKit tokens 已配置" };
+      }
+      return { status: "anonymous", message: "Apple Music 需要配置 MusicKit developer token 和 user token" };
+    }
+    if (intent === "logout") {
+      this.appleMusicUserToken = "";
+      return {
+        status: "anonymous",
+        message: "已清除 Apple Music user token",
+        configPatch: { appleMusicUserToken: "" },
+      };
+    }
+    if (intent === "cancel") {
+      return { status: "anonymous", message: "已取消 Apple Music 登录" };
+    }
+    return {
+      status: "anonymous",
+      flow: "manual-token",
+      actions: [{
+        type: "open-url",
+        label: "打开 MusicKit 文档",
+        url: "https://developer.apple.com/documentation/musickitjs",
+        message: "在 Apple 授权域名下通过 MusicKit JS 获取 user token 后填入配置",
+      }],
+      message: "在 Apple 授权域名下通过 MusicKit JS 获取 user token 后填入配置",
+    };
   }
 
   async search(query: MusicListQuery): Promise<MusicSearchResult> {
@@ -86,6 +162,7 @@ export class ITunesConnector implements MusicConnector {
       entity: "song",
       limit: String(pageSize),
       media: "music",
+      country: this.storefront,
     });
     const url = `${SEARCH_URL}?${params}`;
     const res = await fetch(url);
@@ -170,7 +247,7 @@ export class ITunesConnector implements MusicConnector {
   async listPlaylists(query: MusicPlaylistQuery = {}): Promise<MusicPlaylistList> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 30;
-    const country = "us";
+    const country = this.storefront;
     // For iTunes, sort/category overlap conceptually — each RSS feed IS a
     // sort. We default to a 3-feed sampler; `sort: 'new'` picks the
     // new-releases feed only, `sort: 'hot' | 'trending'` picks most-played.
