@@ -1,62 +1,40 @@
-# @dancingmusic/music-connect-itunes
+# MusicConnect-iTunes
 
-iTunes/Apple Music preview connector for [DancingMusic](https://github.com/DancingMusic/DancingMusic).
+Apple iTunes Search API 的 DancingMusic 匿名预览连接器。
 
-🔗 **Live demo:** [https://dancingmusic.github.io/MusicConnect-iTunes/](https://dancingmusic.github.io/MusicConnect-iTunes/) — search + play table built from this connector's own `dist/index.js`.
+- 实现 ID / 家族 ID：`itunes`
+- 变体：`anonymous`
+- 登录要求：`none`
+- 能力：搜索、歌曲信息、官方预览片段、公开榜单
+- 主机：Web、Desktop
 
-Uses Apple's public iTunes Search API — global music catalog (millions of songs), returns 30-second previews via the official `previewUrl` field. No API key is required for previews.
+它使用 Apple 公共 iTunes Search/Lookup API，不需要 API Key。播放内容是 Apple 提供的官方预览片段，通常约 30 秒，并不是 Apple Music 完整播放。
 
-## Use in DancingMusic
-
-Open the music store → top-right connector switcher → **添加连接器** → **GitHub** tab → paste:
-
-```
-https://github.com/DancingMusic/MusicConnect-iTunes
-```
-
-Optional Apple Music account config:
-
-- `storefront` — Apple storefront/country code, default `us`.
-- `appleDeveloperToken` — MusicKit developer token.
-- `appleMusicUserToken` — MusicKit user token from an Apple-authorized web origin.
-
-The connector reports MusicKit token login state, but full-length Apple Music playback is not exposed by this iTunes preview connector.
-
-## Track ID format
-
-`itunes:<numeric-trackId>`
-
-## API endpoints used
-
-- `GET https://itunes.apple.com/search` — keyword search across the Apple music catalog
-- `GET https://itunes.apple.com/lookup` — track metadata + preview URL
-
-## Note on 30-second previews
-
-Apple's preview clips are intentionally limited to 30 seconds — this is the format Apple provides for free third-party integrations. For full-length playback, users still need an Apple Music subscription.
-
-## License
-
-MIT
-
-## Versioned releases
-
-This repo uses an auto-release workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml)) that creates a `v<package.json version>` tag + GitHub Release on every push to `main` whose version field has changed. Each release attaches the freshly-built `dist/index.js`.
-
-**Pin to a specific version** (recommended for production):
-```
-https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.js
+```json
+{
+  "storefront": "cn"
+}
 ```
 
-**Always-latest** (handy for dev, but jsdelivr caches `@main` for up to a week):
-```
-https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.js
+`storefront` 可选，默认 `us`。
+
+## API
+
+- `GET https://itunes.apple.com/search`
+- `GET https://itunes.apple.com/lookup`
+
+本仓库没有 MusicKit Token、Apple Music 用户登录或完整播放能力。如果以后接入 Apple Music 账号能力，应建立独立的 `apple-music-account` 仓库并遵循 Apple 的授权流程。
+
+## 开发与发布
+
+```bash
+npm install
+npm test
+npm run build
 ```
 
-### Releasing a new version
+```text
+https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.1/dist/index.js
+```
 
-1. Edit code under `src/`
-2. `npm version patch` (or `minor` / `major`) — bumps `package.json`
-3. `npm run build` — refreshes `dist/index.js`
-4. Commit (including `dist/`) + push to `main`
-5. The workflow detects the new version, creates the tag, and publishes the GitHub Release automatically
+统一文档：[DancingMusic Docs](https://dancingmusic.github.io/docs/)

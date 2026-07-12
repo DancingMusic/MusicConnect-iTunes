@@ -16,9 +16,9 @@ describe("ITunesConnector (contract)", () => {
   it("declares meta", () => {
     const c = new ITunesConnector();
     expect(c.meta.id).toBe("itunes");
-    expect(c.meta.capabilities).toEqual(expect.arrayContaining(["search", "stream", "login"]));
-    expect(c.meta.configSchema?.find(field => field.key === "appleDeveloperToken")).toBeDefined();
-    expect(c.meta.configSchema?.find(field => field.key === "appleMusicUserToken")).toBeDefined();
+    expect(c.meta.capabilities).toEqual(expect.arrayContaining(["search", "stream", "playlist"]));
+    expect(c.meta.capabilities).not.toContain("login");
+    expect(c.meta.variant).toBe("anonymous");
   });
 
   it("search returns track-shaped results", async () => {
@@ -122,17 +122,4 @@ describe("ITunesConnector (contract)", () => {
     expect(info!.format).toBe("m4a");
   });
 
-  it("reports MusicKit token login state and clears user token on logout", async () => {
-    const c = new ITunesConnector();
-    await c.init({ appleDeveloperToken: "dev", appleMusicUserToken: "user" });
-    expect((await c.login({ intent: "status" })).status).toBe("authenticated");
-
-    const start = await c.login({ intent: "start" });
-    expect(start.flow).toBe("manual-token");
-    expect(start.actions?.[0]?.url).toContain("developer.apple.com");
-
-    const out = await c.login({ intent: "logout" });
-    expect(out.status).toBe("anonymous");
-    expect(out.configPatch).toEqual({ appleMusicUserToken: "" });
-  });
 });

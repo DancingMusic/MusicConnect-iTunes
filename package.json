@@ -1,6 +1,6 @@
 {
   "name": "@dancingmusic/music-connect-itunes",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "iTunes/Apple Music preview connector for DancingMusic. Uses Apple's public iTunes Search API and optional MusicKit tokens.",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,10 +28,10 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@dancingmusic/music-store": ">=0.1.0"
+    "@dancingmusic/music-connect": ">=0.2.0"
   },
   "devDependencies": {
-    "@dancingmusic/music-store": "file:/Users/wuguangliang/workspace/DancingMusicWorkspace/DancingMusic/submodules/MusicStore",
+    "@dancingmusic/music-connect": "github:DancingMusic/MusicConnect#b90bcabdeff428eb1b1bf5a772c40f2c5e4f5013",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"

@@ -18,9 +18,7 @@ import type {
   MusicPlaylist,
   MusicPlaylistList,
   MusicPlaylistQuery,
-  MusicConnectorLoginRequest,
-  MusicConnectorLoginResult,
-} from "@dancingmusic/music-store";
+} from "@dancingmusic/music-connect";
 
 interface ITunesResult {
   trackId: number;
@@ -40,8 +38,6 @@ interface ITunesResponse {
 }
 
 export interface ITunesConnectorConfig {
-  appleDeveloperToken?: string;
-  appleMusicUserToken?: string;
   storefront?: string;
 }
 
@@ -73,10 +69,14 @@ function toTrack(r: ITunesResult): MusicTrack {
 export class ITunesConnector implements MusicConnector {
   readonly meta: MusicConnectorMeta = {
     id: "itunes",
-    name: "iTunes / Apple Music",
-    description: "Apple iTunes Search previews with optional MusicKit account tokens",
-    version: "0.5.0",
-    capabilities: ["search", "stream", "lyrics", "playlist", "login"],
+    name: "iTunes Preview",
+    description: "Anonymous Apple iTunes Search catalog and official preview clips",
+    familyId: "itunes",
+    variant: "anonymous",
+    authRequirement: "none",
+    supportedHosts: ["web", "desktop"],
+    version: "0.5.1",
+    capabilities: ["search", "stream", "lyrics", "playlist"],
     configSchema: [
       {
         key: "storefront",
@@ -87,68 +87,16 @@ export class ITunesConnector implements MusicConnector {
         placeholder: "us",
         help: "Apple Music storefront/country code, e.g. us, cn, jp.",
       },
-      {
-        key: "appleDeveloperToken",
-        label: "MusicKit Developer Token",
-        type: "password",
-        required: false,
-        placeholder: "eyJhbGciOi...",
-        help: "Apple Developer 后台签发的 MusicKit developer token。",
-      },
-      {
-        key: "appleMusicUserToken",
-        label: "Apple Music User Token",
-        type: "password",
-        required: false,
-        placeholder: "user-token",
-        help: "通过 MusicKit JS 在授权域名下获得的用户 token。",
-      },
     ],
   };
 
-  private appleDeveloperToken = "";
-  private appleMusicUserToken = "";
   private storefront = "us";
 
   async init(config?: Record<string, unknown>): Promise<void> {
     const typed = config as ITunesConnectorConfig | undefined;
-    this.appleDeveloperToken = typeof typed?.appleDeveloperToken === "string" ? typed.appleDeveloperToken : "";
-    this.appleMusicUserToken = typeof typed?.appleMusicUserToken === "string" ? typed.appleMusicUserToken : "";
     this.storefront = (typeof typed?.storefront === "string" && typed.storefront.trim())
       ? typed.storefront.trim().toLowerCase()
       : "us";
-  }
-
-  async login(request: MusicConnectorLoginRequest = { intent: "status" }): Promise<MusicConnectorLoginResult> {
-    const intent = request.intent ?? "status";
-    if (intent === "status") {
-      if (this.appleDeveloperToken && this.appleMusicUserToken) {
-        return { status: "authenticated", user: { name: "Apple Music" }, message: "MusicKit tokens 已配置" };
-      }
-      return { status: "anonymous", message: "Apple Music 需要配置 MusicKit developer token 和 user token" };
-    }
-    if (intent === "logout") {
-      this.appleMusicUserToken = "";
-      return {
-        status: "anonymous",
-        message: "已清除 Apple Music user token",
-        configPatch: { appleMusicUserToken: "" },
-      };
-    }
-    if (intent === "cancel") {
-      return { status: "anonymous", message: "已取消 Apple Music 登录" };
-    }
-    return {
-      status: "anonymous",
-      flow: "manual-token",
-      actions: [{
-        type: "open-url",
-        label: "打开 MusicKit 文档",
-        url: "https://developer.apple.com/documentation/musickitjs",
-        message: "在 Apple 授权域名下通过 MusicKit JS 获取 user token 后填入配置",
-      }],
-      message: "在 Apple 授权域名下通过 MusicKit JS 获取 user token 后填入配置",
-    };
   }
 
   async search(query: MusicListQuery): Promise<MusicSearchResult> {
