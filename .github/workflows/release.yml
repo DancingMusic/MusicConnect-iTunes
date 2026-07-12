@@ -36,17 +36,16 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci || npm install
+        run: npm ci
 
       - name: Test
         run: npm test --silent
 
       - name: Verify dist/index.js exists and is up-to-date
         run: |
-          if [ ! -f dist/index.js ]; then
-            echo "::error::dist/index.js missing — run 'npm run build' locally before pushing"
-            exit 1
-          fi
+          npm run build
+          git ls-files --error-unmatch dist/index.js dist/index.d.ts
+          git diff --exit-code -- dist/index.js dist/index.d.ts
 
       - name: Read package.json version
         id: pkg

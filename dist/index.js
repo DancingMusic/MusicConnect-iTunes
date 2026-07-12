@@ -1,6 +1,7 @@
 // src/index.ts
 var SEARCH_URL = "https://itunes.apple.com/search";
 var LOOKUP_URL = "https://itunes.apple.com/lookup";
+var REQUEST_OPTIONS = { signal: AbortSignal.timeout(15e3) };
 function hiResArtwork(url100) {
   if (!url100) return void 0;
   return url100.replace(/\/100x100bb\.(?:jpg|png)$/i, "/600x600bb.jpg");
@@ -30,7 +31,7 @@ var ITunesConnector = class {
       variant: "anonymous",
       authRequirement: "none",
       supportedHosts: ["web", "desktop"],
-      version: "0.5.1",
+      version: "0.5.2",
       capabilities: ["search", "stream", "lyrics", "playlist"],
       configSchema: [
         {
@@ -62,7 +63,7 @@ var ITunesConnector = class {
       country: this.storefront
     });
     const url = `${SEARCH_URL}?${params}`;
-    const res = await fetch(url);
+    const res = await fetch(url, REQUEST_OPTIONS);
     if (!res.ok) throw new Error(`iTunes search failed: ${res.status}`);
     const data = await res.json();
     return {
@@ -75,7 +76,7 @@ var ITunesConnector = class {
   async getTrack(trackId) {
     const id = this.parseId(trackId);
     if (!id) return null;
-    const res = await fetch(`${LOOKUP_URL}?id=${id}`);
+    const res = await fetch(`${LOOKUP_URL}?id=${id}`, REQUEST_OPTIONS);
     if (!res.ok) return null;
     const data = await res.json();
     const r = data.results?.[0];
@@ -84,7 +85,7 @@ var ITunesConnector = class {
   async getStreamUrl(trackId) {
     const id = this.parseId(trackId);
     if (!id) return null;
-    const res = await fetch(`${LOOKUP_URL}?id=${id}`);
+    const res = await fetch(`${LOOKUP_URL}?id=${id}`, REQUEST_OPTIONS);
     if (!res.ok) return null;
     const data = await res.json();
     const url = data.results?.[0]?.previewUrl;
@@ -110,7 +111,7 @@ var ITunesConnector = class {
     if (track.album) params.set("album_name", track.album);
     if (track.durationSec) params.set("duration", String(track.durationSec));
     try {
-      const res = await fetch(`https://lrclib.net/api/get?${params}`);
+      const res = await fetch(`https://lrclib.net/api/get?${params}`, REQUEST_OPTIONS);
       if (!res.ok) {
         return null;
       }
@@ -158,7 +159,7 @@ var ITunesConnector = class {
     const [country = "us", feed = "most-played", limitStr = "50"] = raw.split("/");
     const limit = parseInt(limitStr, 10) || 50;
     const url = `https://rss.applemarketingtools.com/api/v2/${country}/music/${feed}/${limit}/songs.json`;
-    const res = await fetch(url);
+    const res = await fetch(url, REQUEST_OPTIONS);
     if (!res.ok) return { tracks: [], total: 0, page, pageSize };
     const data = await res.json();
     const items = data.feed?.results ?? [];

@@ -43,6 +43,7 @@ export interface ITunesConnectorConfig {
 
 const SEARCH_URL = "https://itunes.apple.com/search";
 const LOOKUP_URL = "https://itunes.apple.com/lookup";
+const REQUEST_OPTIONS = { signal: AbortSignal.timeout(15_000) } as const;
 
 function hiResArtwork(url100: string | undefined): string | undefined {
   if (!url100) return undefined;
@@ -75,7 +76,7 @@ export class ITunesConnector implements MusicConnector {
     variant: "anonymous",
     authRequirement: "none",
     supportedHosts: ["web", "desktop"],
-    version: "0.5.1",
+    version: "0.5.2",
     capabilities: ["search", "stream", "lyrics", "playlist"],
     configSchema: [
       {
@@ -113,7 +114,7 @@ export class ITunesConnector implements MusicConnector {
       country: this.storefront,
     });
     const url = `${SEARCH_URL}?${params}`;
-    const res = await fetch(url);
+    const res = await fetch(url, REQUEST_OPTIONS);
     if (!res.ok) throw new Error(`iTunes search failed: ${res.status}`);
     const data = (await res.json()) as ITunesResponse;
     return {
@@ -127,7 +128,7 @@ export class ITunesConnector implements MusicConnector {
   async getTrack(trackId: string): Promise<MusicTrack | null> {
     const id = this.parseId(trackId);
     if (!id) return null;
-    const res = await fetch(`${LOOKUP_URL}?id=${id}`);
+    const res = await fetch(`${LOOKUP_URL}?id=${id}`, REQUEST_OPTIONS);
     if (!res.ok) return null;
     const data = (await res.json()) as ITunesResponse;
     const r = data.results?.[0];
@@ -137,7 +138,7 @@ export class ITunesConnector implements MusicConnector {
   async getStreamUrl(trackId: string): Promise<MusicStreamInfo | null> {
     const id = this.parseId(trackId);
     if (!id) return null;
-    const res = await fetch(`${LOOKUP_URL}?id=${id}`);
+    const res = await fetch(`${LOOKUP_URL}?id=${id}`, REQUEST_OPTIONS);
     if (!res.ok) return null;
     const data = (await res.json()) as ITunesResponse;
     const url = data.results?.[0]?.previewUrl;
@@ -164,7 +165,7 @@ export class ITunesConnector implements MusicConnector {
     if (track.album) params.set("album_name", track.album);
     if (track.durationSec) params.set("duration", String(track.durationSec));
     try {
-      const res = await fetch(`https://lrclib.net/api/get?${params}`);
+      const res = await fetch(`https://lrclib.net/api/get?${params}`, REQUEST_OPTIONS);
       if (!res.ok) {
         // 404 means LRCLIB has nothing for this song — that's fine, just null.
         return null;
@@ -228,7 +229,7 @@ export class ITunesConnector implements MusicConnector {
     const [country = "us", feed = "most-played", limitStr = "50"] = raw.split("/");
     const limit = parseInt(limitStr, 10) || 50;
     const url = `https://rss.applemarketingtools.com/api/v2/${country}/music/${feed}/${limit}/songs.json`;
-    const res = await fetch(url);
+    const res = await fetch(url, REQUEST_OPTIONS);
     if (!res.ok) return { tracks: [], total: 0, page, pageSize };
     const data = (await res.json()) as RssChart;
     const items = data.feed?.results ?? [];

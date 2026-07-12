@@ -34,7 +34,7 @@ npm run build
 ```
 
 ```text
-https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.1/dist/index.js
+https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.2/dist/index.js
 ```
 
 统一文档：[DancingMusic Docs](https://dancingmusic.github.io/docs/)
