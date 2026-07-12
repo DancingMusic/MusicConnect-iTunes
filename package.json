@@ -36,6 +36,8 @@
     "esbuild": "0.28.1"
   },
   "optionalDependencies": {
+    "@esbuild/linux-x64": "0.28.1",
+    "@rollup/rollup-linux-x64-gnu": "4.60.4",
     "@rolldown/binding-linux-x64-gnu": "1.1.5"
   },
   "devDependencies": {
