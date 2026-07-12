@@ -35,6 +35,9 @@
   "overrides": {
     "esbuild": "0.28.1"
   },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "1.1.5"
+  },
   "devDependencies": {
     "@dancingmusic/music-connect": "github:DancingMusic/MusicConnect#b90bcabdeff428eb1b1bf5a772c40f2c5e4f5013",
     "tsup": "^8.0.0",
