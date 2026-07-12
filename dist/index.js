@@ -31,7 +31,7 @@ var ITunesConnector = class {
       variant: "anonymous",
       authRequirement: "none",
       supportedHosts: ["web", "desktop"],
-      version: "0.5.2",
+      version: "0.5.3",
       capabilities: ["search", "stream", "lyrics", "playlist"],
       configSchema: [
         {
@@ -142,13 +142,26 @@ var ITunesConnector = class {
     else if (query.sort === "new") feeds = ["new-releases-songs"];
     else if (query.sort === "hot" || query.sort === "trending") feeds = ["most-played"];
     else feeds = ["most-played", "new-releases-songs", "top-songs"];
-    const playlists = feeds.map((feed) => ({
-      id: `itunes-playlist:${country}/${feed}/50`,
-      name: feedLabel(feed),
-      description: `Apple Music ${country.toUpperCase()} \xB7 ${feed}`,
-      trackCount: 50,
-      curator: "Apple Marketing",
-      externalUrl: `https://rss.applemarketingtools.com/api/v2/${country}/music/${feed}/50/songs.json`
+    const playlists = await Promise.all(feeds.map(async (feed) => {
+      const externalUrl = `https://rss.applemarketingtools.com/api/v2/${country}/music/${feed}/50/songs.json`;
+      let coverUrl;
+      try {
+        const response = await fetch(externalUrl, REQUEST_OPTIONS);
+        if (response.ok) {
+          const chart = await response.json();
+          coverUrl = hiResArtwork(chart.feed?.results?.[0]?.artworkUrl100);
+        }
+      } catch {
+      }
+      return {
+        id: `itunes-playlist:${country}/${feed}/50`,
+        name: feedLabel(feed),
+        description: `Apple Music ${country.toUpperCase()} \xB7 ${feed}`,
+        coverUrl,
+        trackCount: 50,
+        curator: "Apple Marketing",
+        externalUrl
+      };
     }));
     return { playlists, total: playlists.length, page, pageSize };
   }
