@@ -162,7 +162,7 @@
       数据源仓库: <code>DancingMusic/MusicConnect-iTunes</code> ·
       版本: <code id="version">loading…</code> ·
       ID 前缀: <code>itunes:</code> ·
-      Bundle: <code><a class="link" href="https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@main/dist/index.js" target="_blank">jsdelivr@main</a></code> ·
+      Bundle: <code><a class="link" href="https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.js" target="_blank">jsdelivr@v0.5.0</a></code> ·
       <a class="link" href="https://github.com/DancingMusic/MusicConnect-iTunes" target="_blank">GitHub →</a>
     </p>
 
@@ -327,7 +327,7 @@
     //
     // Relative `../dist/index.js` doesn't work — GitHub Pages publishes
     // only /docs, so the dist isn't reachable from the page.
-    const BUNDLE_URL = `https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@main/dist/index.js?_=${Date.now()}`;
+    const BUNDLE_URL = `https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.js`;
     const Connector = (await import(BUNDLE_URL)).default;
 
     const DEFAULT_CONFIG = {};

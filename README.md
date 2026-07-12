@@ -50,7 +50,7 @@ https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.j
 
 **Always-latest** (handy for dev, but jsdelivr caches `@main` for up to a week):
 ```
-https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@main/dist/index.js
+https://cdn.jsdelivr.net/gh/DancingMusic/MusicConnect-iTunes@v0.5.0/dist/index.js
 ```
 
 ### Releasing a new version
