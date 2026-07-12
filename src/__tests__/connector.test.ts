@@ -54,6 +54,7 @@ describe("ITunesConnector (contract)", () => {
   });
 
   it("listPlaylists returns Apple Marketing chart entries", async () => {
+    mockFetch(() => ({ feed: { results: [{ artworkUrl100: "https://x/100x100bb.jpg" }] } }));
     const c = new ITunesConnector();
     await c.init();
     const r = await c.listPlaylists!();
@@ -62,9 +63,11 @@ describe("ITunesConnector (contract)", () => {
     const ids = r.playlists.map(p => p.id);
     expect(ids[0]).toMatch(/^itunes-playlist:/);
     expect(r.playlists[0].curator).toBe("Apple Marketing");
+    expect(r.playlists[0].coverUrl).toContain("600x600");
   });
 
   it("listPlaylists sort selects feed (new=new-releases, hot=most-played)", async () => {
+    mockFetch(() => ({ feed: { results: [] } }));
     const c = new ITunesConnector();
     await c.init();
     const newR = await c.listPlaylists!({ sort: "new" });
@@ -75,6 +78,7 @@ describe("ITunesConnector (contract)", () => {
   });
 
   it("uses configured storefront for Apple RSS playlists", async () => {
+    mockFetch(() => ({ feed: { results: [] } }));
     const c = new ITunesConnector();
     await c.init({ storefront: "jp" });
     const r = await c.listPlaylists!({ sort: "hot" });

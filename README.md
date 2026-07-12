@@ -18,6 +18,8 @@ Apple iTunes Search API 的 DancingMusic 匿名预览连接器。
 
 `storefront` 可选，默认 `us`。
 
+公开榜单卡片会读取对应 Apple RSS 榜单第一首歌曲的真实封面；封面请求失败时榜单仍可正常打开。
+
 ## API
 
 - `GET https://itunes.apple.com/search`
