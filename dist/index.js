@@ -2,6 +2,14 @@
 var SEARCH_URL = "https://itunes.apple.com/search";
 var LOOKUP_URL = "https://itunes.apple.com/lookup";
 var REQUEST_OPTIONS = { signal: AbortSignal.timeout(15e3) };
+async function getLrcLibLyrics(params) {
+  const res = await fetch(`https://lrclib.net/api/get?${params}`, REQUEST_OPTIONS);
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data.syncedLyrics) return { text: data.syncedLyrics };
+  if (data.plainLyrics) return { text: data.plainLyrics };
+  return null;
+}
 function hiResArtwork(url100) {
   if (!url100) return void 0;
   return url100.replace(/\/100x100bb\.(?:jpg|png)$/i, "/600x600bb.jpg");
@@ -31,7 +39,7 @@ var ITunesConnector = class {
       variant: "anonymous",
       authRequirement: "none",
       supportedHosts: ["web", "desktop"],
-      version: "0.5.2",
+      version: "0.5.3",
       capabilities: ["search", "stream", "lyrics", "playlist"],
       configSchema: [
         {
@@ -98,27 +106,25 @@ var ITunesConnector = class {
    *
    * We look up the iTunes track first to recover its title/artist/duration,
    * then ask LRCLIB by title+artist (+ duration hint for disambiguation).
+   * A compilation album title is a useful first-pass discriminator, but it
+   * can differ from LRCLIB's canonical album, so a 404 retries without it.
    * Returns the synced LRC as `text` when available; falls back to plain
    * lyrics; returns null when neither exists.
    */
   async getLyrics(trackId) {
     const track = await this.getTrack(trackId);
     if (!track?.title || !track.artist) return null;
-    const params = new URLSearchParams({
+    const baseParams = new URLSearchParams({
       track_name: track.title,
       artist_name: track.artist
     });
-    if (track.album) params.set("album_name", track.album);
-    if (track.durationSec) params.set("duration", String(track.durationSec));
+    if (track.durationSec) baseParams.set("duration", String(track.durationSec));
     try {
-      const res = await fetch(`https://lrclib.net/api/get?${params}`, REQUEST_OPTIONS);
-      if (!res.ok) {
-        return null;
-      }
-      const data = await res.json();
-      if (data.syncedLyrics) return { text: data.syncedLyrics };
-      if (data.plainLyrics) return { text: data.plainLyrics };
-      return null;
+      const exactParams = new URLSearchParams(baseParams);
+      if (track.album) exactParams.set("album_name", track.album);
+      const exact = await getLrcLibLyrics(exactParams);
+      if (exact || !track.album) return exact;
+      return await getLrcLibLyrics(baseParams);
     } catch {
       return null;
     }

@@ -26,6 +26,8 @@ declare class ITunesConnector implements MusicConnector {
      *
      * We look up the iTunes track first to recover its title/artist/duration,
      * then ask LRCLIB by title+artist (+ duration hint for disambiguation).
+     * A compilation album title is a useful first-pass discriminator, but it
+     * can differ from LRCLIB's canonical album, so a 404 retries without it.
      * Returns the synced LRC as `text` when available; falls back to plain
      * lyrics; returns null when neither exists.
      */

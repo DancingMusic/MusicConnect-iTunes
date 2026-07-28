@@ -122,4 +122,39 @@ describe("ITunesConnector (contract)", () => {
     expect(info!.format).toBe("m4a");
   });
 
+  it("retries LRCLIB without an iTunes compilation album after an exact miss", async () => {
+    const lyricUrls: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("itunes.apple.com/lookup")) {
+        return Promise.resolve(new Response(JSON.stringify({
+          resultCount: 1,
+          results: [{
+            trackId: 1578012025,
+            artistName: "Far East Movement",
+            trackName: "Rocketeer (feat. Ryan Tedder)",
+            collectionName: "2010 Top Hits",
+            trackTimeMillis: 211253,
+          }],
+        }), { status: 200 }));
+      }
+
+      lyricUrls.push(url);
+      if (url.includes("album_name=2010+Top+Hits")) {
+        return Promise.resolve(new Response(JSON.stringify({ name: "TrackNotFound" }), { status: 404 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        syncedLyrics: "[00:00.00]Here we go, come with me",
+      }), { status: 200 }));
+    });
+
+    const lyrics = await new ITunesConnector().getLyrics("itunes:1578012025");
+
+    expect(lyrics).toEqual({ text: "[00:00.00]Here we go, come with me" });
+    expect(lyricUrls).toHaveLength(2);
+    expect(lyricUrls[0]).toContain("album_name=2010+Top+Hits");
+    expect(lyricUrls[1]).not.toContain("album_name=");
+    expect(lyricUrls[1]).toContain("duration=211");
+  });
+
 });

@@ -41,9 +41,23 @@ export interface ITunesConnectorConfig {
   storefront?: string;
 }
 
+type LrcLibLyricsPayload = {
+  syncedLyrics?: string | null;
+  plainLyrics?: string | null;
+};
+
 const SEARCH_URL = "https://itunes.apple.com/search";
 const LOOKUP_URL = "https://itunes.apple.com/lookup";
 const REQUEST_OPTIONS = { signal: AbortSignal.timeout(15_000) } as const;
+
+async function getLrcLibLyrics(params: URLSearchParams): Promise<MusicLyrics | null> {
+  const res = await fetch(`https://lrclib.net/api/get?${params}`, REQUEST_OPTIONS);
+  if (!res.ok) return null;
+  const data = (await res.json()) as LrcLibLyricsPayload;
+  if (data.syncedLyrics) return { text: data.syncedLyrics };
+  if (data.plainLyrics) return { text: data.plainLyrics };
+  return null;
+}
 
 function hiResArtwork(url100: string | undefined): string | undefined {
   if (!url100) return undefined;
@@ -76,7 +90,7 @@ export class ITunesConnector implements MusicConnector {
     variant: "anonymous",
     authRequirement: "none",
     supportedHosts: ["web", "desktop"],
-    version: "0.5.2",
+    version: "0.5.3",
     capabilities: ["search", "stream", "lyrics", "playlist"],
     configSchema: [
       {
@@ -152,31 +166,26 @@ export class ITunesConnector implements MusicConnector {
    *
    * We look up the iTunes track first to recover its title/artist/duration,
    * then ask LRCLIB by title+artist (+ duration hint for disambiguation).
+   * A compilation album title is a useful first-pass discriminator, but it
+   * can differ from LRCLIB's canonical album, so a 404 retries without it.
    * Returns the synced LRC as `text` when available; falls back to plain
    * lyrics; returns null when neither exists.
    */
   async getLyrics(trackId: string): Promise<MusicLyrics | null> {
     const track = await this.getTrack(trackId);
     if (!track?.title || !track.artist) return null;
-    const params = new URLSearchParams({
+    const baseParams = new URLSearchParams({
       track_name: track.title,
       artist_name: track.artist,
     });
-    if (track.album) params.set("album_name", track.album);
-    if (track.durationSec) params.set("duration", String(track.durationSec));
+    if (track.durationSec) baseParams.set("duration", String(track.durationSec));
     try {
-      const res = await fetch(`https://lrclib.net/api/get?${params}`, REQUEST_OPTIONS);
-      if (!res.ok) {
-        // 404 means LRCLIB has nothing for this song — that's fine, just null.
-        return null;
-      }
-      const data = (await res.json()) as {
-        syncedLyrics?: string | null;
-        plainLyrics?: string | null;
-      };
-      if (data.syncedLyrics) return { text: data.syncedLyrics };
-      if (data.plainLyrics) return { text: data.plainLyrics };
-      return null;
+      const exactParams = new URLSearchParams(baseParams);
+      if (track.album) exactParams.set("album_name", track.album);
+      const exact = await getLrcLibLyrics(exactParams);
+      if (exact || !track.album) return exact;
+
+      return await getLrcLibLyrics(baseParams);
     } catch {
       return null;
     }
