@@ -31,7 +31,7 @@ var ITunesConnector = class {
       variant: "anonymous",
       authRequirement: "none",
       supportedHosts: ["web", "desktop", "ios", "android"],
-      version: "0.5.3",
+      version: "0.5.4",
       capabilities: ["search", "stream", "lyrics", "playlist"],
       configSchema: [
         {

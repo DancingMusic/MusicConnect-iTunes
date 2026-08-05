@@ -1,6 +1,6 @@
 {
   "name": "@dancingmusic/music-connect-itunes",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "iTunes/Apple Music preview connector for DancingMusic. Uses Apple's public iTunes Search API and optional MusicKit tokens.",
   "type": "module",
   "main": "./dist/index.js",
