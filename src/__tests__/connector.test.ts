@@ -19,6 +19,7 @@ describe("ITunesConnector (contract)", () => {
     expect(c.meta.capabilities).toEqual(expect.arrayContaining(["search", "stream", "playlist"]));
     expect(c.meta.capabilities).not.toContain("login");
     expect(c.meta.variant).toBe("anonymous");
+    expect(c.meta.supportedHosts).toEqual(["web", "desktop", "ios", "android"]);
   });
 
   it("search returns track-shaped results", async () => {

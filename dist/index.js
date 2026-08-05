@@ -30,8 +30,8 @@ var ITunesConnector = class {
       familyId: "itunes",
       variant: "anonymous",
       authRequirement: "none",
-      supportedHosts: ["web", "desktop"],
-      version: "0.5.2",
+      supportedHosts: ["web", "desktop", "ios", "android"],
+      version: "0.5.3",
       capabilities: ["search", "stream", "lyrics", "playlist"],
       configSchema: [
         {
